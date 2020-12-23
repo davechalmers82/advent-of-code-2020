@@ -1,9 +1,11 @@
 package main
 
 type GridTile struct {
-	tile *TileDefinition
+	tileDef *TileDefinition
+	modifiedData [][]byte
 	flipX bool
 	flipY bool
+	rotate bool
 }
 
 func reverse(bytesList []byte) []byte {
@@ -14,81 +16,97 @@ func reverse(bytesList []byte) []byte {
 	return newList
 }
 
+func flipInX(data [][]byte) [][]byte {
+	flipped := make([][]byte, len(data))
+	for i := range data {
+		flipped[i] = reverse(data[i])
+	}
+	return flipped
+}
+
+func flipInY(data [][]byte) [][]byte {
+	flipped := make([][]byte, len(data))
+
+	for y := 0; y < len(data); y++ {
+		srcIndex := len(data) - 1 - y
+
+		flipped[y] = make([]byte, 0, len(data[y]))
+		flipped[y] = append(flipped[y], data[srcIndex]...)
+	}
+	return flipped
+}
+
+func rotateCW(data [][]byte) [][]byte {
+	flipped := make([][]byte, len(data))
+
+	for y := 0; y < len(data); y++ {
+		flipped[y] = make([]byte, 0, len(data[y]))
+
+		for i := 0; i < len(data); i++ {
+			flipped[y] = append(flipped[y], data[len(data) - 1 - i][y])
+		}
+
+	}
+	return flipped
+}
+
+
 func (g GridTile) Top() []byte {
-	top := make([]byte, len(g.tile.data[0]))
-
-	if !g.flipY {
-		copy(top, g.tile.data[0])
-	} else {
-		copy(top, g.tile.data[len(g.tile.data)-1])
-	}
-
-	if g.flipX {
-		top = reverse(top)
-	}
-
-	return top
+	return g.modifiedData[0]
 }
 
 func (g GridTile) Bottom() []byte {
-	bottom := make([]byte, len(g.tile.data[0]))
-
-	if g.flipY {
-		copy(bottom, g.tile.data[0])
-	} else {
-		copy(bottom, g.tile.data[len(g.tile.data)-1])
-	}
-
-	if g.flipX {
-		bottom = reverse(bottom)
-	}
-
-	return bottom
+	return g.modifiedData[len(g.modifiedData)-1]
 }
 
 func (g GridTile) Left() []byte {
-	left := make([]byte, len(g.tile.data))
+	left := make([]byte, len(g.modifiedData))
 
-	xIndex := 0
-	if g.flipX {
-		xIndex = len(g.tile.data[0])-1
+	for y := 0; y < len(g.modifiedData); y++ {
+		left[y] = g.modifiedData[y][0]
 	}
-
-	for y := 0; y < len(g.tile.data); y++ {
-		left[y] = g.tile.data[y][xIndex]
-	}
-
-	if g.flipY {
-		left = reverse(left)
-	}
-
 	return left
 }
 
 func (g GridTile) Right() []byte {
-	right := make([]byte, len(g.tile.data))
+	right := make([]byte, len(g.modifiedData))
 
-	xIndex := 0
-	if !g.flipX {
-		xIndex = len(g.tile.data[0])-1
-	}
+	xIndex := len(g.modifiedData[0])-1
 
-	for y := 0; y < len(g.tile.data); y++ {
-		right[y] = g.tile.data[y][xIndex]
-	}
-
-	if g.flipY {
-		right = reverse(right)
+	for y := 0; y < len(g.modifiedData); y++ {
+		right[y] = g.modifiedData[y][xIndex]
 	}
 
 	return right
 }
 
-func NewGridTile(def *TileDefinition, flipX bool, flipY bool) *GridTile {
-	return &GridTile{
-		tile: def,
+func NewGridTile(def *TileDefinition, flipX bool, flipY bool, rotate bool) *GridTile {
+
+	gridTile := &GridTile{
+		tileDef: def,
 		flipY: flipY,
 		flipX: flipX,
+		rotate: rotate,
 	}
+
+	gridTile.modifiedData = make([][]byte, len(def.data))
+	for i := range def.data {
+		gridTile.modifiedData[i] = make([]byte, len(def.data[i]))
+		copy(gridTile.modifiedData[i], def.data[i])
+	}
+
+	if rotate {
+		gridTile.modifiedData = rotateCW(gridTile.modifiedData)
+	}
+
+	if flipX {
+		gridTile.modifiedData = flipInX(gridTile.modifiedData)
+	}
+
+	if flipY {
+		gridTile.modifiedData = flipInY(gridTile.modifiedData)
+	}
+
+	return gridTile
 }
 

@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"strconv"
 )
 
 type Grid struct {
@@ -24,6 +26,22 @@ func NewGrid(width int, height int, tiles []*TileDefinition) *Grid {
 	return newGrid
 }
 
+func (g *Grid) Print() {
+	fmt.Println("-----------------------------------------------------------------------------------")
+	for _, row := range g.grid {
+		fmt.Print("| ")
+		for _, item := range row {
+			if item.tileDef != nil {
+				fmt.Print(strconv.Itoa(item.tileDef.id) + " | ")
+			} else {
+				fmt.Print("NONE | ")
+			}
+		}
+		fmt.Println()
+	}
+	fmt.Println("-----------------------------------------------------------------------------------")
+}
+
 func (g *Grid) Width() int {
 	return len(g.grid[0])
 }
@@ -37,9 +55,11 @@ func (g *Grid) Clone() *Grid {
 	clonedGrid := NewGrid(g.Width(), g.Height(), g.available)
 	for y, row := range g.grid {
 		for x, item := range row {
-			clonedGrid.grid[y][x].tile = item.tile
+			clonedGrid.grid[y][x].tileDef = item.tileDef
+			clonedGrid.grid[y][x].modifiedData = item.modifiedData
 			clonedGrid.grid[y][x].flipY = item.flipY
 			clonedGrid.grid[y][x].flipX = item.flipX
+			clonedGrid.grid[y][x].rotate = item.rotate
 		}
 	}
 	return clonedGrid
@@ -48,7 +68,7 @@ func (g *Grid) Clone() *Grid {
 func (g *Grid) FindEmptyGridTile() (x int, y int) {
 	for y, row := range g.grid {
 		for x, gridTile := range row {
-			if gridTile.tile == nil {
+			if gridTile.tileDef == nil {
 				return x, y
 			}
 		}
@@ -57,27 +77,28 @@ func (g *Grid) FindEmptyGridTile() (x int, y int) {
 }
 
 func (g *Grid) AllPossibleGridTilesForCoord(x int, y int) (possible []*GridTile) {
-
 	for _, def := range g.available {
+		// Do all these twice once not rotated and once with
+		for i := 0; i < 2; i++ {
+			standard := NewGridTile(def, false, false, i == 1)
+			if g.CanBePlaced(x, y, standard) {
+				possible = append(possible, standard)
+			}
 
-		standard := NewGridTile(def, false, false)
-		if g.CanBePlaced(x, y, standard) {
-			possible = append(possible, standard)
-		}
+			flippedX := NewGridTile(def, true, false, i == 1)
+			if g.CanBePlaced(x, y, flippedX) {
+				possible = append(possible, flippedX)
+			}
 
-		flippedX := NewGridTile(def, true, false)
-		if g.CanBePlaced(x, y, flippedX) {
-			possible = append(possible, flippedX)
-		}
+			flippedY := NewGridTile(def, false, true, i == 1)
+			if g.CanBePlaced(x, y, flippedY) {
+				possible = append(possible, flippedY)
+			}
 
-		flippedY := NewGridTile(def, false, true)
-		if g.CanBePlaced(x, y, flippedY) {
-			possible = append(possible, flippedY)
-		}
-
-		flippedXY := NewGridTile(def, true, true)
-		if g.CanBePlaced(x, y, flippedXY) {
-			possible = append(possible, flippedXY)
+			flippedXY := NewGridTile(def, true, true, i == 1)
+			if g.CanBePlaced(x, y, flippedXY) {
+				possible = append(possible, flippedXY)
+			}
 		}
 	}
 
@@ -96,12 +117,14 @@ func (g *Grid) indexOfAvailableDefinition(def *TileDefinition) (index int) {
 
 func (g *Grid) PlaceTile(x int, y int, gridTile *GridTile) {
 
-	g.grid[y][x].tile = gridTile.tile
+	g.grid[y][x].tileDef = gridTile.tileDef
+	g.grid[y][x].modifiedData = gridTile.modifiedData
 	g.grid[y][x].flipX = gridTile.flipX
 	g.grid[y][x].flipY = gridTile.flipY
+	g.grid[y][x].rotate = gridTile.rotate
 
 	// Remove from available
-	index := g.indexOfAvailableDefinition(gridTile.tile)
+	index := g.indexOfAvailableDefinition(gridTile.tileDef)
 	if index >= 0 {
 		g.available = append(g.available [:index], g.available [index+1:]...)
 	}
@@ -117,22 +140,22 @@ func (g *Grid) at(x int, y int) (gridTile *GridTile) {
 func (g *Grid) CanBePlaced(x int, y int, gridTile *GridTile) bool {
 
 	north := g.at(x, y-1)
-	if north != nil && north.tile != nil && 0 != bytes.Compare(north.Bottom(), gridTile.Top()) {
+	if north != nil && north.tileDef != nil && 0 != bytes.Compare(north.Bottom(), gridTile.Top()) {
 		return false
 	}
 
 	south := g.at(x, y+1)
-	if south != nil && south.tile != nil && 0 != bytes.Compare(south.Top(), gridTile.Bottom()) {
+	if south != nil && south.tileDef != nil && 0 != bytes.Compare(south.Top(), gridTile.Bottom()) {
 		return false
 	}
 
 	east := g.at(x+1, y)
-	if east != nil && east.tile != nil && 0 != bytes.Compare(east.Left(), gridTile.Right()) {
+	if east != nil && east.tileDef != nil && 0 != bytes.Compare(east.Left(), gridTile.Right()) {
 		return false
 	}
 
 	west := g.at(x-1, y)
-	if west != nil && west.tile != nil && 0 != bytes.Compare(west.Right(), gridTile.Left()) {
+	if west != nil && west.tileDef != nil && 0 != bytes.Compare(west.Right(), gridTile.Left()) {
 		return false
 	}
 

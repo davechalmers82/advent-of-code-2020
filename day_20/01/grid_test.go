@@ -50,13 +50,13 @@ func TestGridPlaceTile(t *testing.T) {
 	tileDef := createTestTileDefinition()
 
 	grid := NewGrid(width, height, []*TileDefinition{ tileDef })
-	gridTile := NewGridTile(tileDef, false, true)
+	gridTile := NewGridTile(tileDef, false, true, false)
 
 	grid.PlaceTile(0, 0, gridTile)
 
 	placedTile := grid.at(0, 0)
 
-	if placedTile.tile != gridTile.tile {
+	if placedTile.tileDef != gridTile.tileDef {
 		t.Error("expected same tile at 0, 0")
 	}
 	if placedTile.flipY != gridTile.flipY {
@@ -79,13 +79,13 @@ func TestGridPlaceTileCloned(t *testing.T) {
 	grid := NewGrid(width, height, []*TileDefinition{ tileDef })
 	clonedGrid := grid.Clone()
 
-	gridTile := NewGridTile(tileDef, false, true)
+	gridTile := NewGridTile(tileDef, false, true, false)
 
 	// Place in cloned
 	clonedGrid.PlaceTile(0, 0, gridTile)
 	clonedTile := clonedGrid.at(0, 0)
 
-	if clonedTile.tile != gridTile.tile {
+	if clonedTile.tileDef != gridTile.tileDef {
 		t.Error("expected same tile at 0, 0")
 	}
 	if clonedTile.flipY != gridTile.flipY {
@@ -100,7 +100,7 @@ func TestGridPlaceTileCloned(t *testing.T) {
 
 	// Check original
 	originalTile := grid.at(0, 0)
-	if originalTile.tile != nil {
+	if originalTile.tileDef != nil {
 		t.Error("should be unchanged")
 	}
 	if originalTile.flipY != false {
@@ -114,5 +114,58 @@ func TestGridPlaceTileCloned(t *testing.T) {
 	}
 }
 
+func TestGridFindEmptyGridTileEmpty(t *testing.T) {
+	const height = 3
+	const width = 3
+
+	tileDef := createTestTileDefinition()
+
+	grid := NewGrid(width, height, []*TileDefinition{ tileDef })
+
+	x, y := grid.FindEmptyGridTile()
+
+	if x != 0 || y != 0 {
+		t.Error("when empty should find x=0, y=0")
+	}
+}
+
+func TestGridFindEmptyGridTileAfterPlaced(t *testing.T) {
+	const height = 3
+	const width = 3
+
+	tileDef := createTestTileDefinition()
+
+	grid := NewGrid(width, height, []*TileDefinition{ tileDef })
+
+	gridTile := NewGridTile(tileDef, false, true, false)
+	grid.PlaceTile(0, 0, gridTile)
+
+	x, y := grid.FindEmptyGridTile()
+	if x != 1 || y != 0 {
+		t.Error("when empty should find x=1, y=0")
+	}
+}
+
+func TestGridFindEmptyGridTileFull(t *testing.T) {
+	const height = 3
+	const width = 3
+
+	tileDef := createTestTileDefinition()
+
+	grid := NewGrid(width, height, []*TileDefinition{ tileDef })
+
+	gridTile := NewGridTile(tileDef, false, true, false)
+
+	for i:= 0; i < height; i++ {
+		for j:= 0; j < width; j++ {
+			grid.PlaceTile(j, i, gridTile)
+		}
+	}
+
+	x, y := grid.FindEmptyGridTile()
+	if x != -1 || y != -1 {
+		t.Error("should return -1, -1 when full")
+	}
+}
 
 

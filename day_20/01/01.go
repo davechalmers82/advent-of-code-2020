@@ -14,24 +14,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	//for i, tile := range tiles {
-	//	tile.Print()
-//		fmt.Println(i)
-//	}
-
 	size := int(math.Sqrt(float64(len(tiles))))
-
-	fmt.Println("======================================")
-	fmt.Println(size)
-	fmt.Println("======================================")
-
 	completedGrids := completeGrid(NewGrid(size, size, tiles))
 
-	fmt.Println(len(completedGrids))
+	for i, solution := range completedGrids {
+		fmt.Printf("Solution: %d\n", i)
+		solution.Print()
+	}
 }
 
 func completeGrid(grid *Grid) (completeGrids []*Grid) {
-
 	x, y := grid.FindEmptyGridTile()
 	if x >= 0 && y >= 0 {
 		possibleGridTiles := grid.AllPossibleGridTilesForCoord(x, y)
