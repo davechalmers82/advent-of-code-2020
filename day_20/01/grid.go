@@ -35,9 +35,12 @@ func (g *Grid) Height() int {
 func (g *Grid) Clone() *Grid {
 	// Clone the grid
 	clonedGrid := NewGrid(g.Width(), g.Height(), g.available)
-	copy(clonedGrid.grid, g.grid)
-	for i, row := range g.grid {
-		copy(clonedGrid.grid[i], row)
+	for y, row := range g.grid {
+		for x, item := range row {
+			clonedGrid.grid[y][x].tile = item.tile
+			clonedGrid.grid[y][x].flipY = item.flipY
+			clonedGrid.grid[y][x].flipX = item.flipX
+		}
 	}
 	return clonedGrid
 }
