@@ -18,9 +18,19 @@ func main() {
 	completedGrids := completeGrid(NewGrid(size, size, tiles))
 
 	for i, solution := range completedGrids {
-		fmt.Printf("Solution: %d\n", i)
+		fmt.Printf("Solution: %d - Value: %d\n", i, calculateCornerValues(solution))
 		solution.Print()
 	}
+}
+
+func calculateCornerValues(grid *Grid) int {
+	tl := grid.at(0, 0)
+	tr := grid.at(grid.Width()-1, 0)
+
+	bl := grid.at(0, grid.Height()-1)
+	br := grid.at(grid.Width()-1, grid.Height()-1)
+
+	return  tl.tileDef.id * tr.tileDef.id * bl.tileDef.id * br.tileDef.id
 }
 
 func completeGrid(grid *Grid) (completeGrids []*Grid) {
