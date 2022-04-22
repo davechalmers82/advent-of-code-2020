@@ -42,6 +42,58 @@ func (g *Grid) Print() {
 	fmt.Println("-----------------------------------------------------------------------------------")
 }
 
+func (g *Grid) GenerateSingleBuffer(spacers int, removeBorder bool) [][]byte {
+	tileSizeX := len(g.grid[0][0].tileDef.data[0])
+	tileSizeY := len(g.grid[0][0].tileDef.data)
+
+	border := 0
+
+	if removeBorder {
+		tileSizeX -= 2
+		tileSizeY -= 2
+		border = 1
+	}
+
+	spacesX := (g.Width() - 1) * spacers
+	spacesY := (g.Height() - 1) * spacers
+
+	buffer := make([][]byte, (g.Height() * tileSizeY) + spacesX)
+	for y := range buffer {
+		buffer[y] = make([]byte, (g.Width() * tileSizeX) + spacesY)
+	}
+
+	if spacers > 0 {
+		defaultValueIntoBuffer(&buffer, ' ')
+	}
+
+	for tileY, row := range g.grid {
+		for tileX, tile := range row {
+			if tile.modifiedData != nil {
+				startX := (tileX * tileSizeX) + (spacers * tileX)
+				startY := (tileY * tileSizeY) + (spacers * tileY)
+				copyBufferIntoBuffer(&buffer, startX, startY, tile.modifiedData, border)
+			}
+		}
+	}
+	return buffer
+}
+
+func defaultValueIntoBuffer(buffer *[][]byte, value byte) {
+	for y, row := range *buffer {
+		for x := range row {
+			(*buffer)[y][x] = value
+		}
+	}
+}
+
+func copyBufferIntoBuffer(buffer *[][]byte, destX int, destY int, data [][]byte, border int) {
+	for y := border; y < len(data) - border; y++ {
+		for x := border; x < len(data[y]) - border; x++ {
+			(*buffer)[destY+y-border][destX+x-border] = data[y][x]
+		}
+	}
+}
+
 func (g *Grid) Width() int {
 	return len(g.grid[0])
 }

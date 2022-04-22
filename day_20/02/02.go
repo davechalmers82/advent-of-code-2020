@@ -25,19 +25,18 @@ func main() {
 	completedGrids := completeGrid(NewGrid(size, size, tiles), *all)
 
 	for i, solution := range completedGrids {
-		fmt.Printf("Solution: %d/%d - Value: %d\n", i + 1, len(completedGrids), calculateCornerValues(solution))
+		fmt.Printf("Solution: %d/%d\n", i + 1, len(completedGrids))
 		solution.Print()
+
+		fullMap := solution.GenerateSingleBuffer(0, true)
+		printBuffer(&fullMap)
 	}
 }
 
-func calculateCornerValues(grid *Grid) int {
-	tl := grid.at(0, 0)
-	tr := grid.at(grid.Width()-1, 0)
-
-	bl := grid.at(0, grid.Height()-1)
-	br := grid.at(grid.Width()-1, grid.Height()-1)
-
-	return  tl.tileDef.id * tr.tileDef.id * bl.tileDef.id * br.tileDef.id
+func printBuffer(buffer *[][]byte) {
+	for _, row := range *buffer {
+		fmt.Println(string(row))
+	}
 }
 
 func completeGrid(grid *Grid, findAll bool) (completeGrids []*Grid) {
